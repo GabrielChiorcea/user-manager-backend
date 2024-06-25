@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
 from .models import User
+from app.hashing import HashPass
 from . import db
 
 
@@ -17,10 +18,11 @@ def insert_data():
     password = data.get('password')
 
     try:
-        new_user = User(email, password)
+        has = HashPass.passwordHash(password)
+        new_user = User(email, has)
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({'message': 'User added successfully'}), 201
+        return jsonify({'message': has}), 201
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -36,10 +38,15 @@ def sing_up():
 
     try:
         check_user = User.query.filter_by(email = email).first()
-        if (email == check_user.email and password == check_user.password ):
-            return jsonify({'message': 'User exits'}), 200
+        validate =  HashPass.check_password(check_user.password, password)
+        if(validate):
+            return jsonify({'message': 'Password is the same'}), 200
         else:
-            return jsonify({'message': 'User dot not exits'}), 404
+            return jsonify({'message': 'Password is not the same' }), 404
+    
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e) }), 200
+
+
+        
