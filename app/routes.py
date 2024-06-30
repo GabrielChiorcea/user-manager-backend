@@ -11,18 +11,21 @@ main = Blueprint('main', __name__)
 
 
 
-@main.route('/sing-up' , methods=['POST'])
+@main.route('/creare-cont' , methods=['POST'])
 def insert_data():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
+    firstName = data.get('firstName')
+    lastName = data.get('lastName')
+    dateOdBirth = data.get('dateOdBirth')
 
-    try:
+    try: 
         has = HashPass.passwordHash(password)
-        new_user = User(email, has)
+        new_user = User(email, has, firstName, lastName, dateOdBirth)
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({'message': has}), 201
+        return jsonify({'message': "Cont este creat"}), 201
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -30,7 +33,7 @@ def insert_data():
 
     
 
-@main.route("/login", methods=["POST"])
+@main.route("/intra-in-cont", methods=["POST"])
 def sing_up():
     data = request.get_json()
     email = data.get("email")
@@ -39,10 +42,10 @@ def sing_up():
     try:
         check_user = User.query.filter_by(email = email).first()
         validate =  HashPass.check_password(check_user.password, password)
-        if(validate):
+        if(validate and check_user.email == email):
             return jsonify({'message': 'Password is the same'}), 200
         else:
-            return jsonify({'message': 'Password is not the same' }), 404
+            return jsonify({'message': 'Password or email are incorect' }), 404
     
     except SQLAlchemyError as e:
         db.session.rollback()
