@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
 from .models import User
@@ -18,14 +19,13 @@ def insert_data():
     password = data.get('password')
     firstName = data.get('firstName')
     lastName = data.get('lastName')
-    dateOdBirth = data.get('dateOdBirth')
 
     try: 
-        has = HashPass.passwordHash(password)
-        new_user = User(email, has, firstName, lastName, dateOdBirth)
+        has = HashPass.passwordHash(password) #password is hashed
+        new_user = User(email, has, firstName, lastName)
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({'message': "Cont este creat"}), 201
+        return jsonify({'message': "The user account is create with succes"}), 201
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
