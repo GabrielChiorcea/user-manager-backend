@@ -43,20 +43,24 @@ def sing_up():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
+    ip = request.remote_addr
+    print(ip + " " + " < acesta este adresa ip")
 
     try:
-        check_user = User.query.filter_by(email = email).first()
-        user =  HashPass.check_password(check_user.password, password)
-        if(user and check_user.email == email):
-            access_tocken = create_access_token(identity=check_user.id)
-            return jsonify({'message': access_tocken}), 200
+        check_user = User.query.filter_by(email=email).first()
+        if not check_user:
+            return jsonify({'message': 'User not found'}), 404
+
+        user = HashPass.check_password(check_user.password, password)
+        if user:
+            access_token = create_access_token(identity=check_user.id)
+            return jsonify({'message': access_token}), 200
         else:
-            return jsonify({'message': 'Password or email are incorect' }), 404
+            return jsonify({'message': 'Password is incorrect'}), 401
     
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({'error': str(e) }), 200
-    
+        return jsonify({'error': str(e)}), 500    
 
 
 @main.route("/checkUserAndEmailForAvailability", methods=["POST"])
@@ -87,6 +91,6 @@ def give_mes():
     user_id = get_jwt_identity()
     user = User.query.filter_by(id=user_id).first()
     if user:
-        return jsonify({'message': 'User found', 'name': user.email})
+        return jsonify({'message': 'User found', 'email': user.email})
     else:
         return jsonify({'message': 'User not found'}), 404
