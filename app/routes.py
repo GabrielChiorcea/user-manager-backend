@@ -3,14 +3,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from .models import User, UniqueIdentify
 from app.hashing import HashPass
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from . import db, jwt
+from . import db
 
 
 
 
 main = Blueprint('main', __name__)
-
-
 
 
 @main.route('/creare-cont' , methods=['POST'])
@@ -44,23 +42,24 @@ def sing_up():
     email = data.get("email")
     password = data.get("password")
     ip = request.remote_addr
-    print(ip + " " + " < acesta este adresa ip")
 
     try:
         check_user = User.query.filter_by(email=email).first()
         if not check_user:
-            return jsonify({'message': 'User not found'}), 404
+            return jsonify({'message': 'User not found', 'code' : '202'}), 202
 
         user = HashPass.check_password(check_user.password, password)
         if user:
             access_token = create_access_token(identity=check_user.id)
-            return jsonify({'message': access_token}), 200
-        else:
-            return jsonify({'message': 'Password is incorrect'}), 401
+            return jsonify({'message': access_token, "code" : "200"}), 200
+        else:   
+            return jsonify({'message': 'Password or user are incorrect', "code": "202"}), 202
     
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500    
+
+
 
 
 @main.route("/checkUserAndEmailForAvailability", methods=["POST"])
@@ -82,6 +81,8 @@ def checkEmailForAvailability_db():
         return jsonify({'message': 'true'}), 200
     else:
         return jsonify({'message': 'false'}), 200
+
+
 
 
 
