@@ -1,14 +1,20 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
-from .models import User, UniqueIdentify
+from .models import User, Session
 from app.hashing import HashPass
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from . import db
+import random
+import string
 
 
 
 
 main = Blueprint('main', __name__)
+
+round = 7
+
+session_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=round))
 
 
 @main.route('/creare-cont' , methods=['POST'])
@@ -23,10 +29,7 @@ def insert_data():
     try: 
         has = HashPass.passwordHash(password) #password is hashed
         new_user = User(email, has, firstName, lastName, userName)
-        new_identify = UniqueIdentify(email, userName)
         db.session.add(new_user)
-        db.session.commit()
-        db.session.add(new_identify)
         db.session.commit()
         return jsonify({'message': "The user account is create with succes"}), 201
     except SQLAlchemyError as e:
@@ -41,7 +44,8 @@ def sing_up():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
-    ip = request.remote_addr
+    add_session_string = session_string
+    ip = str(request.remote_addr)
 
     try:
         check_user = User.query.filter_by(email=email).first()
@@ -51,7 +55,10 @@ def sing_up():
         user = HashPass.check_password(check_user.password, password)
         if user:
             access_token = create_access_token(identity=check_user.id)
-            return jsonify({'message': access_token, "code" : "200"}), 200
+            insert_session = Session(add_session_string, access_token, ip)
+            db.session.add(insert_session)
+            db.session.commit()
+            return jsonify({'message': add_session_string, "code" : "200"}), 200
         else:   
             return jsonify({'message': 'Password or user are incorrect', "code": "202"}), 202
     
@@ -71,9 +78,9 @@ def checkEmailForAvailability_db():
     valid = None
 
     if email:
-        valid = UniqueIdentify.query.filter_by(email=email).first()
+        valid = User.query.filter_by(email=email).first()
     elif username:
-        valid = UniqueIdentify.query.filter_by(username=username).first()
+        valid = User.query.filter_by(username=username).first()
     else:
         return jsonify({'message': 'Email or username must be provided'}), 400
     print(valid)
@@ -87,11 +94,14 @@ def checkEmailForAvailability_db():
 
 
 @main.route("/get", methods=['GET'])
-@jwt_required()
 def give_mes():
-    user_id = get_jwt_identity()
-    user = User.query.filter_by(id=user_id).first()
-    if user:
-        return jsonify({'message': 'User found', 'email': user.email})
+    ip = str(request.remote_addr)
+    auth_header = request.headers.get('Authorization')
+    auth_header_startSwitch = auth_header.startswith('Bearer ')
+
+    token = auth_header.split(' ')[1]
+    ses = Session.query.filter_by(session_string=token).first()
+    if ses and auth_header_startSwitch and ses.ip == ip:
+        return jsonify({'message': 'User found', 'email': ses.jwt})
     else:
         return jsonify({'message': 'User not found'}), 404

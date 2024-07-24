@@ -17,11 +17,13 @@ class User(db.Model):
 
 
 
-class UniqueIdentify(db.Model):
+class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    username = db.Column(db.String(255), nullable=False)
+    session_string = db.Column(db.String(255), unique=True, nullable=False)
+    jwt = db.Column(db.String(255), unique=True, nullable=False)
+    ip = db.Column(db.String(15), unique=True, nullable=False)
 
-    def __init__(self, email, username):
-        self.email = email,
-        self.username = username
+    def __init__(self, session_string, jwt, ip):
+        self.session_string = session_string
+        self.jwt = jwt
+        self.ip = ip
