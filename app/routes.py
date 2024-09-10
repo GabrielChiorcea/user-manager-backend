@@ -83,7 +83,6 @@ def checkEmailForAvailability_db():
         valid = User.query.filter_by(username=username).first()
     else:
         return jsonify({'message': 'Email or username must be provided'}), 400
-    print(valid)
     if valid:
         return jsonify({'message': 'true'}), 200
     else:
