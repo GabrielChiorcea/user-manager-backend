@@ -25,5 +25,5 @@ def create_app():
 
     from .routes import main
     app.register_blueprint(main)
-    CORS(app, origins= ["*"], methods= ['*'])
+    CORS(app, origins=["*"], supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE"])
     return app
