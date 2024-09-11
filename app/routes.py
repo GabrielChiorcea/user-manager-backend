@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from sqlalchemy.exc import SQLAlchemyError
 from .models import User, Session
 from app.hashing import HashPass
@@ -19,7 +19,7 @@ session_string = ''.join(random.choices(string.ascii_uppercase + string.digits, 
 
 @main.route('/')
 def online():
-    return "online"
+    return render_template('status.html')
 
 @main.route('/creare-cont' , methods=['POST'])
 def insert_data():

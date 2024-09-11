@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Status</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(circle, #70e960, #1c0dee);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            text-align: center;
+            animation: backgroundAnimation 10s infinite alternate;
+        }
+
+        @keyframes backgroundAnimation {
+            2% { background: radial-gradient(circle, #2adb5f, #1395bc); }
+            100% { background: radial-gradient(circle, #27aec3, #0b24e3); }
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 30px rgba(0, 255, 255, 0.6);
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.2));
+            opacity: 0.6;
+            transform: rotate(-30deg);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .container > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #00ff99;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+            animation: textAnimation 2s infinite alternate;
+        }
+
+        @keyframes textAnimation {
+            0% { color: #00ff99; }
+            100% { color: #00ffcc; }
+        }
+
+        p {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+            animation: fadeIn 3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .status {
+            font-size: 1.8em;
+            padding: 15px 30px;
+            border-radius: 5px;
+            display: inline-block;
+            background: #00ff99;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 8px 16px rgba(0, 255, 0, 0.5);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backend Status</h1>
+        <p>Everything is operating at full capacity.</p>
+        <span class="status">UP & RUNNING</span>
+    </div>
+</body>
+</html>
