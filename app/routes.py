@@ -17,6 +17,10 @@ round = 7
 session_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=round))
 
 
+@main.route('/')
+def online():
+    return "online"
+
 @main.route('/creare-cont' , methods=['POST'])
 def insert_data():
     data = request.get_json()
