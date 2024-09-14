@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify, render_template
 from sqlalchemy.exc import SQLAlchemyError
-from .models import User, Session
+from .models import User, Session, ProfileCard
 from app.hashing import HashPass
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from . import db
 import random
 import string
+import jwt
+from flask import current_app as app
 
 
 
@@ -94,17 +96,55 @@ def checkEmailForAvailability_db():
 
 
 
+main.route("/SetContactDetail", methods = ['POST'])
+def setContactDetail():
+    data = request.get_json()
+
+    image = data.get("Image") 
+    occupation = data.get("Occupation")
+    homeaddres = data.get("HomeAddress")
+    country = data.get("Country")
+    conty = data.get("County")
+    image = data.get("Image")
+
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+
+    ses = Session.query.filter_by(session_string=token).first()
+
+    if ses:
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        user_id = decoded_token.get('identity')
+
+        ProfileCard(occupation, homeaddres, country, conty, user_id, image )
+        db.session.add(ProfileCard)
+        db.session.commit()
+        return jsonify({'message': 'User found', 'email': ses.jwt})
+
+
+
 
 
 @main.route("/get", methods=['GET'])
 def give_mes():
     ip = str(request.remote_addr)
     auth_header = request.headers.get('Authorization')
-    auth_header_startSwitch = auth_header.startswith('Bearer ')
-
+    secret_key = app.config['JWT_SECRET_KEY']
     token = auth_header.split(' ')[1]
     ses = Session.query.filter_by(session_string=token).first()
-    if ses and auth_header_startSwitch and ses.ip == ip:
-        return jsonify({'message': 'User found', 'email': ses.jwt})
+
+    if ses and ses.ip == ip:
+
+        decode_tocken = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        profile = ProfileCard.query.filter_by(user_id=decode_tocken).first()
+
+        return jsonify({'HomeAddress': profile.homeaddress, 
+                        'Country': profile.country, 
+                        'County': profile.county, 
+                        'Occupation': profile.occupation,
+                        'Image': profile.image})
     else:
         return jsonify({'message': 'User not found'}), 404
+
+

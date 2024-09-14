@@ -1,4 +1,6 @@
 from . import db
+from sqlalchemy import Column, Integer, String, ForeignKey
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -27,3 +29,23 @@ class Session(db.Model):
         self.session_string = session_string
         self.jwt = jwt
         self.ip = ip
+
+class ProfileCard(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    occupation = db.Column(db.String(255))
+    homeaddress = db.Column(db.String(255))
+    country = db.Column(db.String(255))
+    county = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, ForeignKey("users.id"))
+    image = db.Column(db.LargeBinary)
+
+    def __init__(self, occupation, homeaddress, country, county, user_id, image ):
+        self.occupation = occupation
+        self.homeaddress = homeaddress
+        self.country = country
+        self.county = county
+        self.user_id = user_id
+        self.image = image
+
+
+
