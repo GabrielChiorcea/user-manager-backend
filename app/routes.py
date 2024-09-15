@@ -136,7 +136,7 @@ def give_mes():
 
     if ses and ses.ip == ip:
 
-        decode_tocken = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        decode_tocken = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
         profile = ProfileCard.query.filter_by(user_id=decode_tocken).first()
 
         return jsonify({'HomeAddress': profile.homeaddress, 
