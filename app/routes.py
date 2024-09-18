@@ -96,7 +96,7 @@ def checkEmailForAvailability_db():
 
 
 
-main.route("/SetContactDetail", methods=['POST'])
+@main.route("/SetContactDetail", methods=['POST'])
 def setContactDetailDb():
     data = request.get_json()
 
