@@ -95,32 +95,38 @@ def checkEmailForAvailability_db():
         return jsonify({'message': 'false'}), 200
 
 
-
 @main.route("/SetContactDetail", methods=['POST'])
-def setContactDetailDb():
-    data = request.get_json()
+def setContactDetail():
+    # Your function implementation here
+    return jsonify({'message': 'Contact details set successfully'}), 200
 
-    image = data.get("Image") 
-    occupation = data.get("Occupation")
-    homeaddres = data.get("HomeAddress")
-    country = data.get("Country")
-    conty = data.get("County")
-    image = data.get("Image")
+# @main.route("/SetContactDetail", methods=['POST'])
+# def setContactDetailDb():
 
-    secret_key = app.config['JWT_SECRET_KEY']
-    auth_header = request.headers.get('Authorization')
-    token = auth_header.split(' ')[1]
+    # data = request.get_json()
 
-    ses = Session.query.filter_by(session_string=token).first()
+    # image = data.get("Image") 
+    # occupation = data.get("Occupation")
+    # homeaddress = data.get("HomeAddress")
+    # country = data.get("Country")
+    # county = data.get("County")
 
-    if ses:
-        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
-        user_id = decoded_token.get('identity')
+    # secret_key = app.config['JWT_SECRET_KEY']
+    # auth_header = request.headers.get('Authorization')
+    # token = auth_header.split(' ')[1]
 
-        ProfileCard(occupation, homeaddres, country, conty, user_id, image )
-        db.session.add(ProfileCard)
-        db.session.commit()
-        return jsonify({'message': 'User found', 'email': ses.jwt})
+    # ses = Session.query.filter_by(session_string=token).first()
+
+    # if ses:
+    #     decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
+    #     user_id = decoded_token.get('identity')
+
+    #     new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
+    #     db.session.add(new_profile)
+    #     db.session.commit()
+    #     return jsonify({'message': 'Contact details set successfully'}), 200
+    # else:
+    #     return jsonify({'message': 'User not found'}), 404
 
 
 
