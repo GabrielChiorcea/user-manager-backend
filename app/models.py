@@ -8,11 +8,15 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(255), unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
+    last_name = db.Column(db.String(255), nullable=False)
+    hashed_password = db.Column(db.String(255), nullable=False)
 
-    def __init__(self, username, email):
+    def __init__(self, username, email, last_name, hashed_password):
         self.username = username
         self.email = email
-
+        self.last_name = last_name
+        self.hashed_password = hashed_password
+        
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_string = db.Column(db.String(255))
