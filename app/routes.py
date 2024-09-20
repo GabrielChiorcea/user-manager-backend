@@ -118,10 +118,13 @@ def setContactDetailDb():
     if ses:
         decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
         user_id = decoded_token.get('identity')
-
-        new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
-        db.session.add(new_profile)
-        db.session.commit()
+        try:
+            new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
+            db.session.add(new_profile)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
         return jsonify({'message': 'Contact details set successfully'}), 200
     else:
         return jsonify({'message': 'User not found'}), 404
