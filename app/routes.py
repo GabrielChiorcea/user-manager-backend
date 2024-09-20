@@ -116,7 +116,7 @@ def setContactDetailDb():
             decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
             user_id = decoded_token.get('identity')
         except jwt.DecodeError as e:
-            return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token}), 400
+            return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt}), 400
         except jwt.ExpiredSignatureError:
             return jsonify({'error': 'Token has expired'}), 401
         except jwt.InvalidTokenError as e:
