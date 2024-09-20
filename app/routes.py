@@ -51,7 +51,6 @@ def sing_up():
     email = data.get("email")
     password = data.get("password")
     add_session_string = session_string
-    ip = str(request.remote_addr)
 
     try:
         check_user = User.query.filter_by(email=email).first()
@@ -61,7 +60,7 @@ def sing_up():
         user = HashPass.check_password(check_user.password, password)
         if user:
             access_token = create_access_token(identity=check_user.id)
-            insert_session = Session(add_session_string, access_token, ip)
+            insert_session = Session(add_session_string, access_token)
             db.session.add(insert_session)
             db.session.commit()
             return jsonify({'message': add_session_string, "code" : "200"}), 200
@@ -95,38 +94,38 @@ def checkEmailForAvailability_db():
         return jsonify({'message': 'false'}), 200
 
 
-@main.route("/setContactDetail", methods=['POST'])
-def setContactDetail():
-    # Your function implementation here
-    return jsonify({'message': 'Contact details set successfully'}), 200
+# @main.route("/setContactDetail", methods=['POST'])
+# def setContactDetail():
+#     # Your function implementation here
+#     # return jsonify({'message': 'Contact details set successfully'}), 200
 
-# @main.route("/SetContactDetail", methods=['POST'])
-# def setContactDetailDb():
+@main.route("/SetContactDetail", methods=['POST'])
+def setContactDetailDb():
 
-    # data = request.get_json()
+    data = request.get_json()
 
-    # image = data.get("Image") 
-    # occupation = data.get("Occupation")
-    # homeaddress = data.get("HomeAddress")
-    # country = data.get("Country")
-    # county = data.get("County")
+    image = data.get("Image") 
+    occupation = data.get("Occupation")
+    homeaddress = data.get("HomeAddress")
+    country = data.get("Country")
+    county = data.get("County")
 
-    # secret_key = app.config['JWT_SECRET_KEY']
-    # auth_header = request.headers.get('Authorization')
-    # token = auth_header.split(' ')[1]
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
 
-    # ses = Session.query.filter_by(session_string=token).first()
+    ses = Session.query.filter_by(session_string=token).first()
 
-    # if ses:
-    #     decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
-    #     user_id = decoded_token.get('identity')
+    if ses:
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
+        user_id = decoded_token.get('identity')
 
-    #     new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
-    #     db.session.add(new_profile)
-    #     db.session.commit()
-    #     return jsonify({'message': 'Contact details set successfully'}), 200
-    # else:
-    #     return jsonify({'message': 'User not found'}), 404
+        new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
+        db.session.add(new_profile)
+        db.session.commit()
+        return jsonify({'message': 'Contact details set successfully'}), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
 
 
 

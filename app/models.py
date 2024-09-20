@@ -23,12 +23,10 @@ class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_string = db.Column(db.String(255), unique=True, nullable=False)
     jwt = db.Column(db.String(255), unique=True, nullable=False)
-    ip = db.Column(db.String(15), unique=True, nullable=False)
 
     def __init__(self, session_string, jwt, ip):
         self.session_string = session_string
         self.jwt = jwt
-        self.ip = ip
 
 class ProfileCard(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
