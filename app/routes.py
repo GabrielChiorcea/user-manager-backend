@@ -34,7 +34,7 @@ def insert_data():
 
     try: 
         has = HashPass.passwordHash(password) #password is hashed
-        new_user = User(email, has, firstName, lastName, userName)
+        new_user = User(email, userName, lastName, firstName , has)
         db.session.add(new_user)
         db.session.commit()
         return jsonify({'message': "The user account is create with succes"}), 201

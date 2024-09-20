@@ -9,14 +9,16 @@ class User(db.Model):
     username = db.Column(db.String(255), unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     last_name = db.Column(db.String(255), nullable=False)
+    first_name = db.Column(db.String(255), nullable=False)
     hashed_password = db.Column(db.String(255), nullable=False)
 
-    def __init__(self, username, email, last_name, hashed_password):
+    def __init__(self, username, email, last_name, first_name, hashed_password):
         self.username = username
         self.email = email
         self.last_name = last_name
+        self.first_name = first_name
         self.hashed_password = hashed_password
-        
+
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_string = db.Column(db.String(255))
