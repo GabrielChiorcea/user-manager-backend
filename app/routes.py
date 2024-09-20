@@ -98,8 +98,7 @@ def checkEmailForAvailability_db():
 # def setContactDetail():
 #     # Your function implementation here
 #     # return jsonify({'message': 'Contact details set successfully'}), 200
-
-@main.route("/SetContactDetail", methods=['POST'])
+@main.route("/setContactDetail", methods=['POST'])
 def setContactDetailDb():
 
     data = request.get_json()
