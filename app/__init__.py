@@ -1,5 +1,4 @@
 from flask import Flask
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -23,5 +22,4 @@ def create_app():
 
     from .routes import main
     app.register_blueprint(main)
-    CORS(app, origins=["*"], supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE"])
     return app
