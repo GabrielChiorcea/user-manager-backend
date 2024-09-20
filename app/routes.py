@@ -112,8 +112,15 @@ def setContactDetailDb():
     ses = Session.query.filter_by(session_string=token).first()
 
     if ses:
-        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
-        user_id = decoded_token.get('identity')
+        try:
+            decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
+            user_id = decoded_token.get('identity')
+        except jwt.DecodeError as e:
+            return jsonify({'error': 'Invalid token format', 'message': str(e)}), 400
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError as e:
+            return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
         try:
             new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
             db.session.add(new_profile)
