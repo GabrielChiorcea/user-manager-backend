@@ -7,6 +7,7 @@ from . import db
 import random
 import string
 import jwt
+import datetime
 from flask import current_app as app
 
 
@@ -59,7 +60,7 @@ def sing_up():
 
         user = HashPass.check_password(check_user.password, password)
         if user:
-            access_token = create_access_token(identity=check_user.id)
+            access_token = create_access_token(identity=check_user.id, )
             insert_session = Session(add_session_string, access_token)
             db.session.add(insert_session)
             db.session.commit()
@@ -116,7 +117,7 @@ def setContactDetailDb():
             decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
             user_id = decoded_token.get('identity')
         except jwt.DecodeError as e:
-            return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt, 'id': user_id}), 400
+            return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt, 'id': user_id, 'decoded_token': type(decoded_token)}), 400
         except jwt.ExpiredSignatureError:
             return jsonify({'error': 'Token has expired'}), 401
         except jwt.InvalidTokenError as e:
