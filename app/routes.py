@@ -143,14 +143,14 @@ def setContactDetailDb():
 @main.route("/get", methods=['GET'])
 def give_mes():
     auth_header = request.headers.get('Authorization')
-    if auth_header and ' ' in auth_header:  # Verifică dacă header-ul există și conține spațiu (adică are formatul corect)
+    if auth_header and ' ' in auth_header:  # Verifică dacă header-ul există și este valid
         token = auth_header.split(' ')[1]
-        print(token)  # Debugging statement
+        print(f"Token: {token}")
     else:
         return jsonify({'error': 'Authorization header missing or invalid'}), 401
 
-    print(auth_header)  # Debugging statement
-    
+    print(auth_header)  # Debugging
+
     secret_key = app.config['JWT_SECRET_KEY']
     
     try:
