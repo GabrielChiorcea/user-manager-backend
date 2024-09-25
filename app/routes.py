@@ -9,6 +9,7 @@ import string
 import jwt
 import datetime
 from flask import current_app as app
+import base64
 
 
 
@@ -60,7 +61,7 @@ def sing_up():
 
         user = HashPass.check_password(check_user.password, password)
         if user:
-            access_token = create_access_token(identity=check_user.id, )
+            access_token = create_access_token(identity=check_user.id, expires_delta=datetime.timedelta(days=1))    
             insert_session = Session(add_session_string, access_token)
             db.session.add(insert_session)
             db.session.commit()
@@ -100,22 +101,24 @@ def setContactDetailDb():
 
     data = request.get_json()
 
-    image = data.get("Image") 
-    occupation = data.get("Occupation")
-    homeaddress = data.get("HomeAddress")
-    country = data.get("Country")
-    county = data.get("County")
-
+    image = data.get("image") 
+    occupation = data.get("occupation")
+    homeaddress = data.get("homeAddress")
+    country = data.get("country")
+    county = data.get("county")
+    image_binary = base64.b64decode(image)
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
 
     ses = Session.query.filter_by(session_string=token).first()
 
+
     if ses:
         try:
-            decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
-            user_id = decoded_token.get('identity')
+            decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+            user_id = decoded_token.get('sub')
+
         except jwt.DecodeError as e:
             return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt, 'id': user_id, 'decoded_token': type(decoded_token)}), 400
         except jwt.ExpiredSignatureError:
@@ -123,7 +126,7 @@ def setContactDetailDb():
         except jwt.InvalidTokenError as e:
             return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
         try:
-            new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image)
+            new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image_binary)
             db.session.add(new_profile)
             db.session.commit()
         except SQLAlchemyError as e:
@@ -139,22 +142,31 @@ def setContactDetailDb():
 
 @main.route("/get", methods=['GET'])
 def give_mes():
-    ip = str(request.remote_addr)
     auth_header = request.headers.get('Authorization')
     secret_key = app.config['JWT_SECRET_KEY']
     token = auth_header.split(' ')[1]
-    ses = Session.query.filter_by(session_string=token).first()
+    print(token)
+    try:
+        ses = Session.query.filter_by(session_string=token).first()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}),
 
-    if ses and ses.ip == ip:
+    if ses is not None:
 
-        decode_tocken = jwt.decode(ses.jwt, secret_key, algorithms=["RS256"])
-        profile = ProfileCard.query.filter_by(user_id=decode_tocken).first()
+        decode_tocken = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        id = decode_tocken.get('sub')
+        profile = ProfileCard.query.filter_by(user_id=id).first()
+        user = User.query.filter_by(id=id).first()
+        fullname = user.first_name + ' ' + user.last_name
+        image = base64.b64encode(profile.image).decode('utf-8')
 
         return jsonify({'HomeAddress': profile.homeaddress, 
                         'Country': profile.country, 
                         'County': profile.county, 
                         'Occupation': profile.occupation,
-                        'Image': profile.image})
+                        'FullName': fullname,
+                        'Image': image})
     else:
         return jsonify({'message': 'User not found'}), 404
 

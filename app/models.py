@@ -22,7 +22,7 @@ class User(db.Model):
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_string = db.Column(db.String(255))
-    jwt = db.Column(db.String(255))
+    jwt = db.Column(db.Text, nullable=False)
 
     def __init__(self, session_string, jwt):
         self.session_string = session_string
