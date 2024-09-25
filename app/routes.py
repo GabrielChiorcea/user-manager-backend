@@ -143,35 +143,46 @@ def setContactDetailDb():
 @main.route("/get", methods=['GET'])
 def give_mes():
     auth_header = request.headers.get('Authorization')
-    secret_key = app.config['JWT_SECRET_KEY']
-    token = auth_header.split(' ')[1]
-    print(token)
+    if auth_header and ' ' in auth_header:  # Verifică dacă header-ul există și conține spațiu (adică are formatul corect)
+        token = auth_header.split(' ')[1]
+        print(token)  # Debugging statement
+    else:
+        return jsonify({'error': 'Authorization header missing or invalid'}), 401
 
     print(auth_header)  # Debugging statement
-   
-
+    
+    secret_key = app.config['JWT_SECRET_KEY']
+    
     try:
         ses = Session.query.filter_by(session_string=token).first()
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}),
+        return jsonify({'error': str(e)}), 500
 
     if ses is not None:
-
-        decode_tocken = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
-        id = decode_tocken.get('sub')
+        try:
+            decode_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        id = decode_token.get('sub')
         profile = ProfileCard.query.filter_by(user_id=id).first()
         user = User.query.filter_by(id=id).first()
-        fullname = user.first_name + ' ' + user.last_name
-        image = base64.b64encode(profile.image).decode('utf-8')
-
-        return jsonify({'HomeAddress': profile.homeaddress, 
-                        'Country': profile.country, 
-                        'County': profile.county, 
-                        'Occupation': profile.occupation,
-                        'FullName': fullname,
-                        'Image': image})
+        
+        if profile and user:
+            fullname = f"{user.first_name} {user.last_name}"
+            image = base64.b64encode(profile.image).decode('utf-8')
+            return jsonify({
+                'HomeAddress': profile.homeaddress, 
+                'Country': profile.country, 
+                'County': profile.county, 
+                'Occupation': profile.occupation,
+                'FullName': fullname,
+                'Image': image
+            })
+        else:
+            return jsonify({'message': 'Profile or user not found'}), 404
     else:
-        return jsonify({'message': 'User not found'}), 404
-
-
+        return jsonify({'message': 'Session not found'}), 404
