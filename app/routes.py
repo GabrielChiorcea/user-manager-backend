@@ -146,6 +146,10 @@ def give_mes():
     secret_key = app.config['JWT_SECRET_KEY']
     token = auth_header.split(' ')[1]
     print(token)
+
+    print(auth_header)  # Debugging statement
+   
+
     try:
         ses = Session.query.filter_by(session_string=token).first()
     except SQLAlchemyError as e:
