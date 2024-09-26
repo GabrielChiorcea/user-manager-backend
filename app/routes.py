@@ -111,30 +111,33 @@ def setContactDetailDb():
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
 
-    ses = Session.query.filter_by(session_string=token).first()
 
+    try:
+        ses = Session.query.filter_by(session_string=token).first()
 
-    if ses:
-        try:
-            decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
-            user_id = decoded_token.get('sub')
-
-        except jwt.DecodeError as e:
-            return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt, 'id': user_id, 'decoded_token': type(decoded_token)}), 400
-        except jwt.ExpiredSignatureError:
-            return jsonify({'error': 'Token has expired'}), 401
-        except jwt.InvalidTokenError as e:
-            return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
-        try:
-            new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image_binary)
-            db.session.add(new_profile)
-            db.session.commit()
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-        return jsonify({'message': 'Contact details set successfully'}), 200
-    else:
-        return jsonify({'message': 'User not found'}), 404
+        if ses:
+            try:
+                decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+                user_id = decoded_token.get('sub')
+            except jwt.DecodeError as e:
+                return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt, 'id': user_id, 'decoded_token': type(decoded_token)}), 400
+            except jwt.ExpiredSignatureError:
+                return jsonify({'error': 'Token has expired'}), 401
+            except jwt.InvalidTokenError as e:
+                return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+            try:
+                new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image_binary)
+                db.session.add(new_profile)
+                db.session.commit()
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                return jsonify({'error': str(e)}), 500
+            return jsonify({'message': 'Contact details set successfully'}), 200
+        else:
+            return jsonify({'message': ses}), 404
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
 
 
 
