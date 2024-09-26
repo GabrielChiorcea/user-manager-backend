@@ -101,11 +101,11 @@ def setContactDetailDb():
 
     data = request.get_json()
 
-    image = data.get("Image") 
-    occupation = data.get("Occupation")
-    homeaddress = data.get("HomeAddress")
-    country = data.get("Country")
-    county = data.get("County")
+    image = data.get("image") 
+    occupation = data.get("occupation")
+    homeaddress = data.get("homeAddress")
+    country = data.get("country")
+    county = data.get("county")
     image_binary = base64.b64decode(image)
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
@@ -142,13 +142,13 @@ def setContactDetailDb():
 def setSocialLinkDb():
 
     data = request.get_json()
-    linkedin = data.get("LinkedIn")
-    facebook = data.get("FaceBook")
-    github = data.get("GitHub")
-    instagram = data.get("Instagram")
-    twitter = data.get("Twitter")
-    youtube = data.get("YouTube")
-    description = data.get("Description")
+    linkedin = data.get("linkedIn")
+    facebook = data.get("faceBook")
+    github = data.get("gitHub")
+    instagram = data.get("instagram")
+    twitter = data.get("twitter")
+    youtube = data.get("youTube")
+    description = data.get("description")
     
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
