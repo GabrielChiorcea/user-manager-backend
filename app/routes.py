@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, render_template
 from sqlalchemy.exc import SQLAlchemyError
-from .models import User, Session, ProfileCard
+from .models import User, Session, ProfileCard, SocialLinks
 from app.hashing import HashPass
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from . import db
@@ -101,11 +101,11 @@ def setContactDetailDb():
 
     data = request.get_json()
 
-    image = data.get("image") 
-    occupation = data.get("occupation")
-    homeaddress = data.get("homeAddress")
-    country = data.get("country")
-    county = data.get("county")
+    image = data.get("Image") 
+    occupation = data.get("Occupation")
+    homeaddress = data.get("HomeAddress")
+    country = data.get("Country")
+    county = data.get("County")
     image_binary = base64.b64decode(image)
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
@@ -118,7 +118,7 @@ def setContactDetailDb():
                 decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
                 user_id = decoded_token.get('sub')
             except jwt.DecodeError as e:
-                return jsonify({'error': 'Invalid token format', 'message': str(e), 'session' : token, 'tocken': ses.jwt, 'id': user_id, 'decoded_token': type(decoded_token)}), 400
+                return jsonify({'error': 'Invalid token format'}), 400
             except jwt.ExpiredSignatureError:
                 return jsonify({'error': 'Token has expired'}), 401
             except jwt.InvalidTokenError as e:
@@ -126,6 +126,49 @@ def setContactDetailDb():
             try:
                 new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image_binary)
                 db.session.add(new_profile)
+                db.session.commit()
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                return jsonify({'error': str(e)}), 500
+            return jsonify({'message': 'Contact details set successfully'}), 200
+        else:
+            return jsonify({'message': token}), 404
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
+
+@main.route("/setSocialLink", methods=['POST'])
+def setSocialLinkDb():
+
+    data = request.get_json()
+    linkedin = data.get("LinkedIn")
+    facebook = data.get("FaceBook")
+    github = data.get("GitHub")
+    instagram = data.get("Instagram")
+    twitter = data.get("Twitter")
+    youtube = data.get("YouTube")
+    description = data.get("Description")
+    
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+
+    try:
+        ses = Session.query.filter_by(session_string=token).first()
+        if ses:
+            try:
+                decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+                user_id = decoded_token.get('sub')
+            except jwt.DecodeError as e:
+                return jsonify({'error': 'Invalid token format'}), 400
+            except jwt.ExpiredSignatureError:
+                return jsonify({'error': 'Token has expired'}), 401
+            except jwt.InvalidTokenError as e:
+                return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+            try:
+                socialLinks = SocialLinks(linkedin, facebook, github, instagram, twitter, youtube, description, user_id)
+                db.session.add(socialLinks)
                 db.session.commit()
             except SQLAlchemyError as e:
                 db.session.rollback()
@@ -170,6 +213,7 @@ def give_mes():
         
         id = decode_token.get('sub')
         profile = ProfileCard.query.filter_by(user_id=id).first()
+        socialLinks = SocialLinks.query.filter_by(user_id=id).first()
         user = User.query.filter_by(id=id).first()
         
         if profile and user:
@@ -181,7 +225,14 @@ def give_mes():
                 'County': profile.county, 
                 'Occupation': profile.occupation,
                 'FullName': fullname,
-                'Image': image
+                'Image': image,
+                'LinkedIn': socialLinks.linkedin,
+                'Facebook': socialLinks.facebook,
+                'GitHub': socialLinks.github,
+                'Instagram': socialLinks.instagram,
+                'Twitter': socialLinks.twitter,
+                'YouTube': socialLinks.youtube,
+                'Description': socialLinks.description
             })
         else:
             return jsonify({'message': 'Profile or user not found'}), 404

@@ -47,3 +47,23 @@ class ProfileCard(db.Model):
 
 
 
+class SocialLinks(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    linkedin = db.Column(db.String(255))
+    facebook = db.Column(db.String(255))
+    github = db.Column(db.String(255))
+    instagram = db.Column(db.String(255))
+    twitter = db.Column(db.String(255))
+    youtube = db.Column(db.String(255))
+    description = db.Column(db.Text)
+    user_id = db.Column(db.Integer, ForeignKey("users.id"))
+
+    def __init__(self, linkedin, facebook, github, instagram, twitter, youtube, description, user_id):
+        self.linkedin = linkedin
+        self.facebook = facebook
+        self.github = github
+        self.instagram = instagram
+        self.twitter = twitter
+        self.youtube = youtube
+        self.description = description
+        self.user_id = user_id
