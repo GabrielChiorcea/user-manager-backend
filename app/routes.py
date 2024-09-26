@@ -111,10 +111,8 @@ def setContactDetailDb():
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
 
-
     try:
         ses = Session.query.filter_by(session_string=token).first()
-
         if ses:
             try:
                 decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
@@ -134,7 +132,7 @@ def setContactDetailDb():
                 return jsonify({'error': str(e)}), 500
             return jsonify({'message': 'Contact details set successfully'}), 200
         else:
-            return jsonify({'message': ses}), 404
+            return jsonify({'message': token}), 404
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
