@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, render_template
 from sqlalchemy.exc import SQLAlchemyError
 from .models import User, Session, ProfileCard, SocialLinks
 from app.hashing import HashPass
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token
 from . import db
 import random
 import string
@@ -63,12 +63,26 @@ def sing_up():
         if user:
             access_token = create_access_token(identity=check_user.id, expires_delta=datetime.timedelta(days=1))    
             insert_session = Session(add_session_string, access_token)
+            dummy_profile = ProfileCard(
+                occupation="N/A",
+                homeaddress="N/A",
+                country="N/A",
+                county="N/A",
+                user_id=check_user.id,
+                image=b""  # Assuming image is stored as binary data
+            )
+
             db.session.add(insert_session)
+            db.session.commit()
+
+            db.session.add(dummy_profile)
             db.session.commit()
             return jsonify({'message': add_session_string, "code" : "200"}), 200
         else:   
             return jsonify({'message': 'Password or user are incorrect', "code": "202"}), 202
     
+
+
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500    
@@ -98,10 +112,9 @@ def checkEmailForAvailability_db():
 
 @main.route("/setContactDetail", methods=['POST'])
 def setContactDetailDb():
-
     data = request.get_json()
 
-    image = data.get("image") 
+    image = data.get("image")
     occupation = data.get("occupation")
     homeaddress = data.get("homeAddress")
     country = data.get("country")
@@ -117,22 +130,36 @@ def setContactDetailDb():
             try:
                 decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
                 user_id = decoded_token.get('sub')
-            except jwt.DecodeError as e:
+            except jwt.DecodeError:
                 return jsonify({'error': 'Invalid token format'}), 400
             except jwt.ExpiredSignatureError:
                 return jsonify({'error': 'Token has expired'}), 401
             except jwt.InvalidTokenError as e:
                 return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+
             try:
-                new_profile = ProfileCard(occupation, homeaddress, country, county, user_id, image_binary)
-                db.session.add(new_profile)
+                # Retrieve the existing profile
+                profile = ProfileCard.query.filter_by(user_id=user_id).first()
+                if profile:
+                    # Update the existing profile with real data
+                    profile.occupation = occupation
+                    profile.homeaddress = homeaddress
+                    profile.country = country
+                    profile.county = county
+                    profile.image = image_binary
+                else:
+                    # Create a new profile if it doesn't exist
+                    profile = ProfileCard(occupation, homeaddress, country, county, user_id, image_binary)
+                    db.session.add(profile)
+
                 db.session.commit()
             except SQLAlchemyError as e:
                 db.session.rollback()
                 return jsonify({'error': str(e)}), 500
+
             return jsonify({'message': 'Contact details set successfully'}), 200
         else:
-            return jsonify({'message': token}), 404
+            return jsonify({'message': 'Session not found'}), 404
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
@@ -147,7 +174,7 @@ def setSocialLinkDb():
     github = data.get("gitHub")
     instagram = data.get("instagram")
     twitter = data.get("twitter")
-    youtube = data.get("youTube")
+    youtube = data.get("youtube")
     description = data.get("description")
     
     secret_key = app.config['JWT_SECRET_KEY']
@@ -185,56 +212,41 @@ def setSocialLinkDb():
 
 
 @main.route("/get", methods=['GET'])
-def give_mes():
+def get_profile():
     auth_header = request.headers.get('Authorization')
-    if auth_header and ' ' in auth_header:  # Verifică dacă header-ul există și este valid
-        token = auth_header.split(' ')[1]
-        print(f"Token: {token}")
-    else:
-        return jsonify({'error': 'Authorization header missing or invalid'}), 401
-
-    print(auth_header)  # Debugging
-
+    if not auth_header:
+        return jsonify({'error': 'Authorization header is missing'}), 401
+    
+    token = auth_header.split(' ')[1]
     secret_key = app.config['JWT_SECRET_KEY']
     
+    ses = Session.query.filter_by(session_string=token).first()
+    if not ses:
+        return jsonify({'error': 'Session not found'}), 401
+    
     try:
-        ses = Session.query.filter_by(session_string=token).first()
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        print(f"Decoded token: {decoded_token}")  # Debugging statement
+        user_id = decoded_token.get('sub')  # Extract user ID from 'sub' key
+        print(f"User ID: {user_id}")  # Debugging statement
+    except jwt.DecodeError as e:
+        return jsonify({'error': 'Invalid token format', 'message': str(e)}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+    
+    profile = ProfileCard.query.filter_by(user_id=user_id).first()
+    if not profile:
+        return jsonify({'error': 'Profile or user not found'}), 404
+    # Convert binary data to base64-encoded string
+    image_base64 = base64.b64encode(profile.image).decode('utf-8')
+    return jsonify({
+        'HomeAddress': profile.homeaddress,
+        'Country': profile.country,
+        'County': profile.county,
+        'Occupation': profile.occupation,
+        'Image': image_base64  # Assuming image is stored as binary data
+    })
 
-    if ses is not None:
-        try:
-            decode_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
-        except jwt.ExpiredSignatureError:
-            return jsonify({'error': 'Token has expired'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-        
-        id = decode_token.get('sub')
-        profile = ProfileCard.query.filter_by(user_id=id).first()
-        socialLinks = SocialLinks.query.filter_by(user_id=id).first()
-        user = User.query.filter_by(id=id).first()
-        
-        if profile and user:
-            fullname = f"{user.first_name} {user.last_name}"
-            image = base64.b64encode(profile.image).decode('utf-8')
-            return jsonify({
-                'HomeAddress': profile.homeaddress, 
-                'Country': profile.country, 
-                'County': profile.county, 
-                'Occupation': profile.occupation,
-                'FullName': fullname,
-                'Image': image,
-                'LinkedIn': socialLinks.linkedin,
-                'Facebook': socialLinks.facebook,
-                'GitHub': socialLinks.github,
-                'Instagram': socialLinks.instagram,
-                'Twitter': socialLinks.twitter,
-                'YouTube': socialLinks.youtube,
-                'Description': socialLinks.description
-            })
-        else:
-            return jsonify({'message': 'Profile or user not found'}), 404
-    else:
-        return jsonify({'message': 'Session not found'}), 404
+
