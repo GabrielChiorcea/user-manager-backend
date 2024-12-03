@@ -29,13 +29,15 @@ class Session(db.Model):
         self.jwt = jwt
 
 class ProfileCard(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    __tablename__ = 'profile_card'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     occupation = db.Column(db.String(255))
     homeaddress = db.Column(db.String(255))
     country = db.Column(db.String(255))
     county = db.Column(db.String(255))
-    user_id = db.Column(db.Integer, ForeignKey("users.id"))
-    image = db.Column(db.LargeBinary)
+    image = db.Column(db.LargeBinary)  # Use LargeBinary for storing large binary data
+
 
     def __init__(self, occupation, homeaddress, country, county, user_id, image):
         self.occupation = occupation
