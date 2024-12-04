@@ -50,6 +50,7 @@ class ProfileCard(db.Model):
 
 
 class SocialLinks(db.Model):
+    __tablename__ = 'social_links'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     linkedin = db.Column(db.String(255))
     facebook = db.Column(db.String(255))

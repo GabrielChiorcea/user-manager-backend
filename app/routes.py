@@ -71,11 +71,24 @@ def sing_up():
                 user_id=check_user.id,
                 image=b""  # Assuming image is stored as binary data
             )
+            dummy_social_links = SocialLinks(
+                linkedin="https://linkedin.com/dummy",
+                facebook="https://facebook.com/dummy",
+                github="https://github.com/dummy",
+                instagram="https://instagram.com/dummy",
+                twitter="https://twitter.com/dummy",
+                youtube="https://youtube.com/dummy",
+                description="N/A",
+                user_id=check_user.id
+            )            
 
             db.session.add(insert_session)
             db.session.commit()
 
             db.session.add(dummy_profile)
+            db.session.commit()
+
+            db.session.add(dummy_social_links)
             db.session.commit()
             return jsonify({'message': add_session_string, "code" : "200"}), 200
         else:   
@@ -167,16 +180,7 @@ def setContactDetailDb():
 
 @main.route("/setSocialLink", methods=['POST'])
 def setSocialLinkDb():
-
     data = request.get_json()
-    linkedin = data.get("linkedIn")
-    facebook = data.get("faceBook")
-    github = data.get("gitHub")
-    instagram = data.get("instagram")
-    twitter = data.get("twitter")
-    youtube = data.get("youtube")
-    description = data.get("description")
-    
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
@@ -187,28 +191,47 @@ def setSocialLinkDb():
             try:
                 decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
                 user_id = decoded_token.get('sub')
-            except jwt.DecodeError as e:
+            except jwt.DecodeError:
                 return jsonify({'error': 'Invalid token format'}), 400
             except jwt.ExpiredSignatureError:
                 return jsonify({'error': 'Token has expired'}), 401
             except jwt.InvalidTokenError as e:
                 return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
-            try:
-                socialLinks = SocialLinks(linkedin, facebook, github, instagram, twitter, youtube, description, user_id)
-                db.session.add(socialLinks)
-                db.session.commit()
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                return jsonify({'error': str(e)}), 500
-            return jsonify({'message': 'Contact details set successfully'}), 200
+
+            # Retrieve the existing social links
+            social_links = SocialLinks.query.filter_by(user_id=user_id).first()
+
+            if social_links:
+                # Update the existing social links with new data
+                social_links.linkedin = data.get("linkedin", social_links.linkedin)
+                social_links.facebook = data.get("facebook", social_links.facebook)
+                social_links.github = data.get("github", social_links.github)
+                social_links.instagram = data.get("instagram", social_links.instagram)
+                social_links.twitter = data.get("twitter", social_links.twitter)
+                social_links.youtube = data.get("youtube", social_links.youtube)
+                social_links.description = data.get("description", social_links.description)
+            else:
+                # Create new social links if they don't exist
+                social_links = SocialLinks(
+                    linkedin=data.get("linkedin", ""),
+                    facebook=data.get("facebook", ""),
+                    github=data.get("github", ""),
+                    instagram=data.get("instagram", ""),
+                    twitter=data.get("twitter", ""),
+                    youtube=data.get("youtube", ""),
+                    description=data.get("description", ""),
+                    user_id=user_id
+                )
+                db.session.add(social_links)
+
+            db.session.commit()
+
+            return jsonify({'message': 'Social links updated successfully'}), 200
         else:
-            return jsonify({'message': token}), 404
+            return jsonify({'message': 'Session not found'}), 404
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
-
-
-
+        return jsonify({'error': str(e)}), 500
 
 
 @main.route("/get", methods=['GET'])
@@ -237,6 +260,12 @@ def get_profile():
         return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
     
     profile = ProfileCard.query.filter_by(user_id=user_id).first()
+    social_links = SocialLinks.query.filter_by(user_id=user_id).first()
+    print(f"Profile: {social_links.github}")  # Debugging statement
+    # profile_with_links = db.session.query(ProfileCard, SocialLinks).filter(
+    #         ProfileCard.user_id == user_id,
+    #         SocialLinks.user_id == user_id
+    #    ).all()
     if not profile:
         return jsonify({'error': 'Profile or user not found'}), 404
     # Convert binary data to base64-encoded string
@@ -246,8 +275,14 @@ def get_profile():
         'Country': profile.country,
         'County': profile.county,
         'Occupation': profile.occupation,
-        'Image': image_base64  # Assuming image is stored as binary data
-    })
+        'Image': image_base64,  # Assuming image is stored as binary data
+        'LinkedIn': social_links.linkedin,
+        'FaceBook': social_links.facebook,
+        'GitHub': social_links.github,
+        'Instagram': social_links.instagram,
+        'Twitter': social_links.twitter,
+        'Youtube': social_links.youtube,
+        'Description': social_links.description
 
-
+    }), 200
 
