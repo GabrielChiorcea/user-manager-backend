@@ -203,13 +203,14 @@ def setSocialLinkDb():
 
             if social_links:
                 # Update the existing social links with new data
-                social_links.linkedin = data.get("linkedin", social_links.linkedin)
-                social_links.facebook = data.get("facebook", social_links.facebook)
-                social_links.github = data.get("github", social_links.github)
-                social_links.instagram = data.get("instagram", social_links.instagram)
-                social_links.twitter = data.get("twitter", social_links.twitter)
+                social_links.linkedin = data.get("linkedIn", social_links.linkedin)
+                social_links.facebook = data.get("faceBook", social_links.facebook)                
+                social_links.github = data.get("gitHub", social_links.github)            
+                social_links.instagram = data.get("instagram", social_links.instagram)            
+                social_links.twitter = data.get("twitter", social_links.twitter)                
                 social_links.youtube = data.get("youtube", social_links.youtube)
                 social_links.description = data.get("description", social_links.description)
+                
             else:
                 # Create new social links if they don't exist
                 social_links = SocialLinks(
@@ -249,9 +250,7 @@ def get_profile():
     
     try:
         decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
-        print(f"Decoded token: {decoded_token}")  # Debugging statement
         user_id = decoded_token.get('sub')  # Extract user ID from 'sub' key
-        print(f"User ID: {user_id}")  # Debugging statement
     except jwt.DecodeError as e:
         return jsonify({'error': 'Invalid token format', 'message': str(e)}), 400
     except jwt.ExpiredSignatureError:
@@ -261,7 +260,7 @@ def get_profile():
     
     profile = ProfileCard.query.filter_by(user_id=user_id).first()
     social_links = SocialLinks.query.filter_by(user_id=user_id).first()
-    print(f"Profile: {social_links.github}")  # Debugging statement
+    user = User.query.filter_by(id=user_id).first()
     # profile_with_links = db.session.query(ProfileCard, SocialLinks).filter(
     #         ProfileCard.user_id == user_id,
     #         SocialLinks.user_id == user_id
@@ -276,6 +275,8 @@ def get_profile():
         'County': profile.county,
         'Occupation': profile.occupation,
         'Image': image_base64,  # Assuming image is stored as binary data
+        'FullName': ' '.join([user.first_name, user.last_name]),
+        'Email': user.email,
         'LinkedIn': social_links.linkedin,
         'FaceBook': social_links.facebook,
         'GitHub': social_links.github,
@@ -286,3 +287,146 @@ def get_profile():
 
     }), 200
 
+
+@main.route("/changePassword", methods=['POST'])
+def change_password():
+    data = request.get_json()
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+
+    try:
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        user_id = decoded_token.get('sub')
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Verify the current password
+        if not HashPass.check_password(user.password, current_password):
+            return jsonify({'message': 'Current password is incorrect'}), 400
+
+        # Update the password
+        user.password = HashPass.passwordHash(new_password)
+        db.session.commit()
+
+        return jsonify({'message': 'Password changed successfully'}), 200
+    except jwt.DecodeError:
+        return jsonify({'error': 'Invalid token format'}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+
+
+@main.route("/changeEmail", methods=['POST'])
+def change_email():
+    data = request.get_json()
+    new_email = data.get("new_email")
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+
+    try:
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        user_id = decoded_token.get('sub')
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Update the email
+        user.email = new_email
+        db.session.commit()
+
+        return jsonify({'message': 'Email changed successfully'}), 200
+    except jwt.DecodeError:
+        return jsonify({'error': 'Invalid token format'}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+
+
+
+@main.route("/changeUsername", methods=['POST'])
+def change_username():
+    data = request.get_json()
+    new_username = data.get("new_username")
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+
+    try:
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        user_id = decoded_token.get('sub')
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Check if the new username already exists
+        existing_user = User.query.filter_by(username=new_username).first()
+        if existing_user:
+            return jsonify({'message': 'Username already taken'}), 400
+
+        # Update the username
+        user.username = new_username
+        db.session.commit()
+
+        return jsonify({'message': 'Username changed successfully'}), 200
+    except jwt.DecodeError:
+        return jsonify({'error': 'Invalid token format'}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+
+@main.route("/deleteAccount", methods=['DELETE'])
+def delete_account():
+    secret_key = app.config['JWT_SECRET_KEY']
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+
+    try:
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        user_id = decoded_token.get('sub')
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Delete related records
+        ProfileCard.query.filter_by(user_id=user_id).delete()
+        SocialLinks.query.filter_by(user_id=user_id).delete()
+        Session.query.filter_by(user_id=user_id).delete()
+
+        # Delete the user record
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({'message': 'Account deleted successfully'}), 200
+    except jwt.DecodeError:
+        return jsonify({'error': 'Invalid token format'}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({'error': 'Invalid token', 'message': str(e)}), 401
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
