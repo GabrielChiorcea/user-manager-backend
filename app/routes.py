@@ -261,13 +261,8 @@ def get_profile():
     profile = ProfileCard.query.filter_by(user_id=user_id).first()
     social_links = SocialLinks.query.filter_by(user_id=user_id).first()
     user = User.query.filter_by(id=user_id).first()
-    # profile_with_links = db.session.query(ProfileCard, SocialLinks).filter(
-    #         ProfileCard.user_id == user_id,
-    #         SocialLinks.user_id == user_id
-    #    ).all()
     if not profile:
         return jsonify({'error': 'Profile or user not found'}), 404
-    # Convert binary data to base64-encoded string
     image_base64 = base64.b64encode(profile.image).decode('utf-8')
     return jsonify({
         'HomeAddress': profile.homeaddress,
@@ -291,14 +286,15 @@ def get_profile():
 @main.route("/changePassword", methods=['POST'])
 def change_password():
     data = request.get_json()
-    current_password = data.get("current_password")
-    new_password = data.get("new_password")
+    current_password = data.get("currentPassword")
+    new_password = data.get("newPassword")
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
 
     try:
-        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        ses = Session.query.filter_by(session_string=token).first()
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
         user_id = decoded_token.get('sub')
 
         user = User.query.filter_by(id=user_id).first()
@@ -329,7 +325,7 @@ def change_password():
 @main.route("/changeEmail", methods=['POST'])
 def change_email():
     data = request.get_json()
-    new_email = data.get("new_email")
+    new_email = data.get("UserName")
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
@@ -363,13 +359,14 @@ def change_email():
 @main.route("/changeUsername", methods=['POST'])
 def change_username():
     data = request.get_json()
-    new_username = data.get("new_username")
+    new_username = data.get("userName")
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
 
     try:
-        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        ses = Session.query.filter_by(session_string=token).first()
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
         user_id = decoded_token.get('sub')
 
         user = User.query.filter_by(id=user_id).first()
@@ -404,8 +401,11 @@ def delete_account():
     token = auth_header.split(' ')[1]
 
     try:
-        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        ses = Session.query.filter_by(session_string=token).first()
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
+        print(decoded_token)
         user_id = decoded_token.get('sub')
+        print(user_id)
 
         user = User.query.filter_by(id=user_id).first()
         if not user:
@@ -414,7 +414,6 @@ def delete_account():
         # Delete related records
         ProfileCard.query.filter_by(user_id=user_id).delete()
         SocialLinks.query.filter_by(user_id=user_id).delete()
-        Session.query.filter_by(user_id=user_id).delete()
 
         # Delete the user record
         db.session.delete(user)
