@@ -36,7 +36,7 @@ def insert_data():
 
     try: 
         has = HashPass.passwordHash(password) #password is hashed
-        new_user = User(email, userName, lastName, firstName , has)
+        new_user = User( userName, email, lastName, firstName , has)
         db.session.add(new_user)
         db.session.commit()
         return jsonify({'message': "The user account is create with succes"}), 201
@@ -64,21 +64,21 @@ def sing_up():
             access_token = create_access_token(identity=check_user.id, expires_delta=datetime.timedelta(days=1))    
             insert_session = Session(add_session_string, access_token)
             dummy_profile = ProfileCard(
-                occupation="N/A",
-                homeaddress="N/A",
-                country="N/A",
-                county="N/A",
+                occupation="May I ask you what do you do?",
+                homeaddress="How far are you ?",
+                country="I guess you are from Nice ?",
+                county="France ?",
                 user_id=check_user.id,
                 image=b""  # Assuming image is stored as binary data
             )
             dummy_social_links = SocialLinks(
-                linkedin="https://linkedin.com/dummy",
-                facebook="https://facebook.com/dummy",
-                github="https://github.com/dummy",
-                instagram="https://instagram.com/dummy",
-                twitter="https://twitter.com/dummy",
-                youtube="https://youtube.com/dummy",
-                description="N/A",
+                linkedin="https://linkedin.com/",
+                facebook="https://facebook.com/",
+                github="https://github.com/",
+                instagram="https://instagram.com/",
+                twitter="https://twitter.com/",
+                youtube="https://youtube.com/",
+                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
                 user_id=check_user.id
             )            
 
@@ -325,13 +325,14 @@ def change_password():
 @main.route("/changeEmail", methods=['POST'])
 def change_email():
     data = request.get_json()
-    new_email = data.get("UserName")
+    new_email = data.get("newEmail")
     secret_key = app.config['JWT_SECRET_KEY']
     auth_header = request.headers.get('Authorization')
     token = auth_header.split(' ')[1]
 
     try:
-        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        ses = Session.query.filter_by(session_string=token).first()
+        decoded_token = jwt.decode(ses.jwt, secret_key, algorithms=["HS256"])
         user_id = decoded_token.get('sub')
 
         user = User.query.filter_by(id=user_id).first()
